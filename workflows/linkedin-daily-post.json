@@ -1,0 +1,271 @@
+{
+  "name": "LinkedIn Daily Post",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## نشر يومي على لينكدإن\n\n**قبل التفعيل، عدّل التالي:**\n\n1. عقدتَي Google Sheets: استبدل `YOUR_GOOGLE_SHEET_ID` بمعرّف الشيت، واختر بيانات الاعتماد.\n2. عقدة LinkedIn: اختر بيانات الاعتماد ثم اختر اسمك من قائمة **Person** (لا تترك `YOUR_LINKEDIN_PERSON_ID`).\n3. تأكد أن اسم التبويب داخل الشيت هو `Posts` وأن الأعمدة: `Date` و `PostText` و `Status`.\n\n**آلية العمل:** كل يوم 9 صباحاً → يقرأ الصفوف التي حالتها `Pending` → يأخذ صفاً واحداً → ينشره → يغيّر حالته إلى `Posted`.",
+        "height": 320,
+        "width": 460,
+        "color": 4
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "تعليمات الإعداد",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-460, -120]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Daily Schedule 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [40, 0],
+      "notes": "يعمل يومياً الساعة 9:00 صباحاً بتوقيت الـ workflow (يُضبط من Settings > Timezone)."
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Posts",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Get Pending Posts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [260, 0],
+      "notes": "يقرأ فقط الصفوف التي عمود Status فيها = Pending."
+    },
+    {
+      "parameters": {
+        "maxItems": 1
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Take One Post",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [480, 0],
+      "notes": "يأخذ أول صف فقط، حتى لا يُنشر أكثر من بوست في اليوم."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-0005-4000-8000-000000000005",
+              "leftValue": "={{ $json.PostText }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Has Post Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [700, 0],
+      "notes": "حماية: لا يُرسل شيئاً إذا كان نص البوست فارغاً."
+    },
+    {
+      "parameters": {
+        "authentication": "standard",
+        "postAs": "person",
+        "person": "YOUR_LINKEDIN_PERSON_ID",
+        "text": "={{ $json.PostText }}",
+        "shareMediaCategory": "NONE",
+        "additionalFields": {}
+      },
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "Publish to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [940, -100],
+      "notes": "ينشر البوست على الحساب الشخصي. يتطلب صلاحية w_member_social من منتج Share on LinkedIn."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Posts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Take One Post').item.json.row_number }}",
+            "Status": "Posted"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PostText",
+              "displayName": "PostText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "Mark as Posted",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1180, -100],
+      "notes": "يحدّث نفس الصف (بالمطابقة على row_number) ويضع Status = Posted. لا يعمل إلا بعد نجاح النشر."
+    }
+  ],
+  "connections": {
+    "Daily Schedule 9AM": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Posts": {
+      "main": [
+        [
+          {
+            "node": "Take One Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Take One Post": {
+      "main": [
+        [
+          {
+            "node": "Has Post Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Post Text?": {
+      "main": [
+        [
+          {
+            "node": "Publish to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Publish to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Mark as Posted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Riyadh",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [],
+  "meta": {
+    "instanceId": "linkedin-automation"
+  }
+}
