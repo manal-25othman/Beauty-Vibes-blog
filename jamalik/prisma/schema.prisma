@@ -1,0 +1,236 @@
+// جمالِك — Prisma schema
+// قاعدة البيانات: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// المصادقة (لوحة التحكم)
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole  @default(EDITOR)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions Session[]
+  authored Article[] @relation("ArticleCreatedBy")
+
+  @@map("users")
+}
+
+/// الجلسات مخزّنة على الخادم: الكوكي يحمل معرّفًا موقّعًا فقط،
+/// والقيمة السرّية تُخزَّن هنا كـ hash حتى لا تُفيد قراءة قاعدة البيانات وحدها.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ---------------------------------------------------------------------------
+// المحتوى
+// ---------------------------------------------------------------------------
+
+model Author {
+  id             String  @id @default(cuid())
+  name           String
+  slug           String  @unique
+  photo          String?
+  photoAlt       String?
+  bio            String  @db.Text
+  specialization String?
+  email          String?
+  socialLinks    Json    @default("{}")
+  seoTitle       String?
+  metaDescription String?
+  isActive       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles Article[]
+
+  @@map("authors")
+}
+
+model Category {
+  id              String  @id @default(cuid())
+  name            String
+  slug            String  @unique
+  description     String? @db.Text
+  image           String?
+  imageAlt        String?
+  color           String? // لون خفيف للشارة في الواجهة
+  seoTitle        String?
+  metaDescription String?
+  sortOrder       Int     @default(0)
+  isActive        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles Article[]
+
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  articles Article[] @relation("ArticleTags")
+
+  @@map("tags")
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+}
+
+model Article {
+  id            String  @id @default(cuid())
+  title         String
+  slug          String  @unique
+  excerpt       String  @db.Text
+  /// محتوى المقال بصيغة Markdown، يُحوَّل إلى HTML معقّم عند العرض.
+  content       String  @db.Text
+  featuredImage String?
+  featuredImageAlt String?
+
+  categoryId String
+  authorId   String
+
+  status      ArticleStatus @default(DRAFT)
+  publishedAt DateTime?
+  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now())
+
+  // حقول السيو
+  seoTitle           String?
+  metaDescription    String?
+  focusKeyword       String?
+  secondaryKeywords  String[] @default([])
+  canonicalUrl       String?
+  noIndex            Boolean  @default(false)
+
+  readingTime Int     @default(1) // بالدقائق
+  viewCount   Int     @default(0)
+  isFeatured  Boolean @default(false)
+  isEditorPick Boolean @default(false)
+
+  createdById String?
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  author    Author    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  createdBy User?     @relation("ArticleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tags      Tag[]     @relation("ArticleTags")
+  faqs      FaqItem[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([viewCount])
+  @@map("articles")
+}
+
+model FaqItem {
+  id        String @id @default(cuid())
+  articleId String
+  question  String @db.Text
+  answer    String @db.Text
+  sortOrder Int    @default(0)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, sortOrder])
+  @@map("faq_items")
+}
+
+// ---------------------------------------------------------------------------
+// التفاعل مع الزوار
+// ---------------------------------------------------------------------------
+
+enum SubscriberStatus {
+  PENDING
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscriber {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  status         SubscriberStatus @default(SUBSCRIBED)
+  source         String? // من أي صفحة جاء الاشتراك
+  /// يُستخدم لروابط إلغاء الاشتراك، ويظل صالحًا طوال عمر الاشتراك.
+  unsubscribeToken String        @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  unsubscribedAt DateTime?
+
+  @@index([status])
+  @@map("newsletter_subscribers")
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String        @db.Text
+  status    ContactStatus @default(NEW)
+  ipHash    String?
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+  @@map("contact_messages")
+}
+
+// ---------------------------------------------------------------------------
+// إعدادات الموقع (مفتاح/قيمة) — تُدار من لوحة التحكم
+// ---------------------------------------------------------------------------
+
+model Setting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

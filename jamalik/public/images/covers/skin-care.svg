@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="العناية بالبشرة">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F6EDE7"/>
+      <stop offset="100%" stop-color="#E7D3C6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g fill="none" stroke="#B08968" stroke-opacity="0.28">
+    <circle cx="936" cy="202.5" r="229.50000000000003" stroke-width="1.5"/>
+    <circle cx="936" cy="202.5" r="148.5" stroke-width="1.5"/>
+    <circle cx="240" cy="526.5" r="175.5" stroke-width="1.5"/>
+  </g>
+  <circle cx="936" cy="202.5" r="60.75" fill="#B08968" fill-opacity="0.16"/>
+  <!-- النص موسّط: محاذاته إلى إحدى الحافتين تعتمد على تفسير المتصفّح
+       لاتجاه النص داخل SVG، وقد يخرج النص العربي خارج الإطار. -->
+  <text x="50%" y="351" text-anchor="middle" font-family="'Segoe UI', Tahoma, sans-serif" font-size="50.625" fill="#B08968" fill-opacity="0.85">العناية بالبشرة</text>
+  <text x="50%" y="408.375" text-anchor="middle" font-family="'Segoe UI', Tahoma, sans-serif" font-size="24.299999999999997" fill="#B08968" fill-opacity="0.6">جمالِك — مجلة الجمال والعناية</text>
+</svg>

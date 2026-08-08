@@ -1,0 +1,366 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ==========================================================================
+   جمالِك — نظام التصميم
+   لوحة ألوان دافئة ومحايدة، تباين كافٍ للقراءة، ومساحات بيضاء واسعة.
+   ========================================================================== */
+
+@theme {
+  /* الأساس */
+  --color-canvas: #fcfaf8;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f7f2ee;
+
+  /* النص */
+  --color-ink: #211e1c;
+  --color-ink-soft: #4a423c;
+  --color-ink-muted: #6e655e;
+  --color-ink-faint: #948a82;
+
+  /* الحدود والفواصل */
+  --color-line: #eae3db;
+  --color-line-strong: #d9cfc4;
+
+  /* اللون المميّز — وردي مغبّر هادئ */
+  --color-accent: #9b5c6b;
+  --color-accent-hover: #834a58;
+  --color-accent-soft: #f7edf0;
+  --color-accent-line: #e7cdd4;
+
+  /* لون ثانوي دافئ للشارات والتفاصيل */
+  --color-sand: #b08d57;
+  --color-sand-soft: #f6efe3;
+
+  /* حالات */
+  --color-success: #4a7c59;
+  --color-success-soft: #eaf3ec;
+  --color-danger: #a4453c;
+  --color-danger-soft: #fbecea;
+  --color-warning: #9a7328;
+  --color-warning-soft: #fbf3e2;
+
+  /* الخطوط */
+  --font-sans: var(--font-body), "Segoe UI", Tahoma, sans-serif;
+  --font-display: var(--font-heading), var(--font-body), "Segoe UI", Tahoma, sans-serif;
+
+  /* الحاوية */
+  --spacing-header: 4.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   الأساسيات
+   -------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* يمنع اختفاء العناوين خلف الترويسة اللاصقة عند التنقل عبر فهرس المحتويات */
+    scroll-padding-top: 6rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.75;
+    /* يمنع الخروج الأفقي الناتج عن عنصر واحد عريض على الشاشات الصغيرة */
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.35;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  /* حالة التركيز موحّدة وواضحة على كل العناصر التفاعلية */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-hover);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   أدوات مساعدة
+   -------------------------------------------------------------------------- */
+
+@utility container-page {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  max-width: 80rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}
+
+/* اقتصاص النص إلى عدد أسطر محدّد — يحافظ على تساوي ارتفاع البطاقات */
+@utility line-clamp-c-* {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: --value(integer);
+  overflow: hidden;
+}
+
+/**
+ * إخفاء بصري كامل دون إزالة العنصر من الشجرة.
+ *
+ * تُستخدم لمصائد الروبوتات في النماذج. الإزاحة بـ left سالبة كبيرة تبدو
+ * حلًّا شائعًا لكنها تُنتج تمريرًا أفقيًا في صفحة RTL — الجانب الأيسر هناك
+ * هو جهة الفيض. هذه الطريقة تُبقي العنصر بأبعاد بكسل واحد فلا يفيض أبدًا.
+ */
+@utility offscreen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* قوائم داخل نصّ المقال لا تحتاج نقاطًا ولا إزاحة (بطاقات، شبكات) */
+.article-body ul.plain-list,
+.article-body ol.plain-list {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+/* رابط تخطّي المحتوى: مخفي حتى يصل إليه التركيز بلوحة المفاتيح */
+@utility skip-link {
+  position: absolute;
+  inset-inline-start: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background-color: var(--color-accent);
+  color: white;
+  border-radius: 0.5rem;
+  transition: top 150ms ease;
+
+  &:focus {
+    top: 1rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   محتوى المقال (prose)
+   -------------------------------------------------------------------------- */
+
+.article-body {
+  color: var(--color-ink-soft);
+  font-size: 1.0625rem;
+  line-height: 2;
+}
+
+@media (width >= 48rem) {
+  .article-body {
+    font-size: 1.125rem;
+  }
+}
+
+.article-body > * + * {
+  margin-block-start: 1.4em;
+}
+
+.article-body h2 {
+  font-size: 1.6rem;
+  color: var(--color-ink);
+  margin-block-start: 2.4em;
+  margin-block-end: 0.6em;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 3px solid var(--color-accent-line);
+}
+
+.article-body h3 {
+  font-size: 1.25rem;
+  color: var(--color-ink);
+  margin-block-start: 1.8em;
+  margin-block-end: 0.5em;
+}
+
+.article-body p {
+  text-wrap: pretty;
+}
+
+.article-body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  transition: color 150ms ease;
+}
+
+.article-body a:hover {
+  color: var(--color-accent-hover);
+}
+
+.article-body ul,
+.article-body ol {
+  padding-inline-start: 1.5rem;
+}
+
+.article-body ul {
+  list-style: disc;
+}
+
+.article-body ol {
+  list-style: decimal;
+}
+
+.article-body li + li {
+  margin-block-start: 0.5em;
+}
+
+.article-body li::marker {
+  color: var(--color-accent);
+}
+
+.article-body strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.article-body blockquote {
+  border-inline-start: 3px solid var(--color-accent);
+  padding-inline-start: 1.25rem;
+  color: var(--color-ink-muted);
+  font-style: normal;
+}
+
+/**
+ * صور المحتوى فقط: Markdown يضع الصورة داخل فقرة أو figure.
+ * القاعدة العامة على كل img كانت تتفوّق على أدوات Tailwind (مثل size-16)
+ * فتمدّ صور المكوّنات — كصورة الكاتبة — إلى عرض الحاوية وتُصفّر أشقاءها.
+ */
+.article-body :is(p, figure) > img {
+  border-radius: 0.75rem;
+  width: 100%;
+}
+
+.article-body figure figcaption {
+  font-size: 0.875rem;
+  color: var(--color-ink-faint);
+  margin-block-start: 0.5rem;
+  text-align: center;
+}
+
+.article-body code {
+  background-color: var(--color-surface-soft);
+  padding: 0.15em 0.4em;
+  border-radius: 0.3rem;
+  font-size: 0.9em;
+}
+
+.article-body hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin-block: 2.5em;
+}
+
+/* الجداول تنزلق أفقيًا داخل حاويتها بدل دفع الصفحة كلها */
+.article-body .table-scroll,
+.article-body table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.article-body table th,
+.article-body table td {
+  border: 1px solid var(--color-line);
+  padding: 0.6rem 0.85rem;
+  text-align: start;
+}
+
+.article-body table th {
+  background-color: var(--color-surface-soft);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* صناديق النصائح والتنبيهات */
+.article-body .callout {
+  border-radius: 0.9rem;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid;
+  font-size: 0.98em;
+}
+
+.article-body .callout > * + * {
+  margin-block-start: 0.75em;
+}
+
+.article-body .callout .callout-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin-block-end: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.article-body .callout-tip {
+  background-color: var(--color-accent-soft);
+  border-color: var(--color-accent-line);
+}
+.article-body .callout-tip .callout-title {
+  color: var(--color-accent-hover);
+}
+
+.article-body .callout-note {
+  background-color: var(--color-sand-soft);
+  border-color: #e8dcc4;
+}
+.article-body .callout-note .callout-title {
+  color: var(--color-warning);
+}
+
+.article-body .callout-warning {
+  background-color: var(--color-danger-soft);
+  border-color: #f0d5d2;
+}
+.article-body .callout-warning .callout-title {
+  color: var(--color-danger);
+}
+
+/* هدف التمرير للعناوين المرتبطة بفهرس المحتويات */
+.article-body :is(h2, h3)[id] {
+  scroll-margin-top: 6rem;
+}
