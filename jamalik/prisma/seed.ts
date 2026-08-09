@@ -15,7 +15,15 @@ import { otherArticles } from "./seed-data/articles-misc";
 import type { SeedArticle } from "./seed-data/types";
 import { slugify } from "../src/lib/slug";
 
-const prisma = new PrismaClient();
+// التعبئة عملية دفعية وقت البناء، لا وقت التشغيل — فتُشغَّل عبر الاتصال المباشر
+// لا عبر مجمّع الاتصالات. سبب تقني: `DATABASE_URL` في الإنتاج مضبوط على
+// connection_limit=1 (وهو الصحيح للدوال بلا خوادم)، لكن upsert المقال يتضمّن
+// كتابة علاقات متداخلة (tags.connect) ينفّذها Prisma داخل معاملة تفاعلية تحتاج
+// اتصالًا إضافيًا — فتنتظر اتصالًا لن يتحرّر، وينتهي الأمر بـ
+// "Timed out fetching a new connection from the connection pool".
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DIRECT_URL || process.env.DATABASE_URL,
+});
 
 const allArticles: SeedArticle[] = [...skinAndHairArticles, ...otherArticles];
 

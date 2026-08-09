@@ -93,7 +93,7 @@ E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD=... npm run test:e2e
 | المتغيّر | مطلوب | الوصف |
 |---|---|---|
 | `DATABASE_URL` | ✅ | اتصال التطبيق — على Vercel استخدمي مجمّع الاتصالات (pooler) |
-| `DIRECT_URL` | ✅ | اتصال مباشر للهجرات فقط — محليًا اجعليه مطابقًا لـ `DATABASE_URL` |
+| `DIRECT_URL` | ✅ | اتصال مباشر للهجرات والتعبئة — محليًا اجعليه مطابقًا لـ `DATABASE_URL` |
 | `NEXT_PUBLIC_SITE_URL` | ✅ | العنوان العام — يؤثّر على canonical و sitemap و OG |
 | `AUTH_SECRET` | ✅ | مفتاح توقيع الجلسات (٢٤ حرفًا فأكثر) |
 | `NEXT_PUBLIC_GA_ID` | — | معرّف GA4 الافتراضي (تتقدّم عليه قيمة اللوحة) |
@@ -238,6 +238,7 @@ src/
 | العطل | السبب المرجّح |
 |---|---|
 | فشل الهجرات في البناء | `DIRECT_URL` يشير إلى Transaction pooler بدل Session pooler |
+| `Timed out fetching a new connection` أثناء التعبئة | `DIRECT_URL` غير مضبوط، فرجعت التعبئة إلى المجمّع المحدود بـ `connection_limit=1` |
 | `Too many connections` وقت التشغيل | `DATABASE_URL` بلا `?pgbouncer=true&connection_limit=1` |
 | روابط canonical خاطئة | `NEXT_PUBLIC_SITE_URL` غير مضبوط أو بشرطة في نهايته |
 | لا يمكن تسجيل الدخول | التعبئة لم تعمل — راجعي سجلّ البناء وتأكّدي من `SEED_ADMIN_*` |
