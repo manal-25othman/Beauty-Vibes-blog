@@ -44,6 +44,23 @@ class Typesetter:
                 x += tracking * size
         return " ".join(parts), x
 
+    def glyph_runs(self, text, size, tracking=0.0):
+        """[(char, x_start, advance)] for each shaped glyph, at `size`."""
+        buf = hb.Buffer()
+        buf.add_str(text)
+        buf.guess_segment_properties()
+        hb.shape(self.font, buf, {})
+        scale = size / self.upem
+        x, out = 0.0, []
+        infos, positions = buf.glyph_infos, buf.glyph_positions
+        for i, (info, pos) in enumerate(zip(infos, positions)):
+            adv = pos.x_advance * scale
+            out.append((text[info.cluster], x, adv))
+            x += adv
+            if i < len(infos) - 1:
+                x += tracking * size
+        return out
+
     def bounds(self, text, size, tracking=0.0):
         """Ink box of a run, relative to the baseline origin: (x0, y0, x1, y1)."""
         buf = hb.Buffer()
