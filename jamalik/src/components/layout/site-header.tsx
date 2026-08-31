@@ -33,9 +33,8 @@ export function HeaderSkeleton() {
   return (
     <header className="h-header border-b border-line bg-surface">
       <div className="container-page flex h-full items-center">
-        <span className="font-display text-2xl font-bold text-ink">
-          {"Beauty Vibes"}
-        </span>
+        {/* الهيكل العظمي يحاكي مقاس الشعار كي لا تنزاح الترويسة عند ظهوره. */}
+        <span className="h-9 w-[9.5rem] rounded bg-line/40 sm:h-10" />
       </div>
     </header>
   );

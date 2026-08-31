@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
@@ -74,11 +75,23 @@ export function HeaderClient({ siteName, navigation, categories }: Props) {
       <div className="container-page">
         <div className="flex h-header items-center justify-between gap-4">
           {/* الشعار */}
-          <Link
-            href="/"
-            className="shrink-0 font-display text-2xl font-bold tracking-tight text-ink transition-colors hover:text-accent sm:text-[1.75rem]"
-          >
-            {siteName}
+          <Link href="/" className="shrink-0" aria-label={siteName}>
+            {/*
+              صورة لا نصّ: الشعار حروفه محوّلة إلى مسارات، فلا يعتمد على خطّ
+              مثبَّت ويظهر متطابقًا في كل جهاز. والاسم يبقى في aria-label
+              لقارئات الشاشة ولمحركات البحث.
+            */}
+            <Image
+              src="/brand/logo.svg"
+              alt={siteName}
+              width={1077}
+              height={275}
+              // SVG لا يمرّ بمحسّن الصور بفائدة، فيُخدَم كما هو بلا طلب إضافي.
+              unoptimized
+              // الشعار أول ما يُرسم، فلا يُؤجَّل تحميله.
+              priority
+              className="h-9 w-auto sm:h-10"
+            />
           </Link>
 
           {/* التنقّل — سطح المكتب */}
