@@ -47,6 +47,14 @@ export const passwordSchema = z
   .refine((v) => /[A-Z]/.test(v), "يجب أن تحتوي على حرف كبير")
   .refine((v) => /[0-9]/.test(v), "يجب أن تحتوي على رقم");
 
+/** إنشاء حساب لمحرّرة جديدة. */
+export const newUserSchema = z.object({
+  name: z.string().trim().min(2, "الاسم مطلوب").max(80),
+  email: z.string().trim().toLowerCase().email("البريد الإلكتروني غير صالح"),
+  password: passwordSchema,
+  role: z.enum(["ADMIN", "EDITOR"]),
+});
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "كلمة المرور الحالية مطلوبة"),

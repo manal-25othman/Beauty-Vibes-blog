@@ -247,6 +247,33 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   await page.waitForURL("**/admin", { timeout: 15000 });
   check("تسجيل الدخول ينجح", await page.getByRole("heading", { name: "لوحة المعلومات" }).isVisible());
 
+  // إدارة الحسابات — الطريق الوحيد لمنح العميلة دخولًا
+  await page.goto(`${BASE}/admin/users`, { waitUntil: "domcontentloaded" });
+  check("صفحة الحسابات تفتح", (await page.locator("table tbody tr").count()) > 0);
+
+  const newEmail = `editor-${Date.now()}@example.com`;
+  await page.getByLabel("الاسم").fill("محرّرة اختبارية");
+  await page.getByLabel("البريد الإلكتروني").fill(newEmail);
+  await page.getByLabel("كلمة مرور مبدئية").fill("TestEditor123x");
+  await page.getByLabel("الصلاحية").selectOption("EDITOR");
+  await page.getByRole("button", { name: "إنشاء الحساب" }).click();
+  await page.waitForTimeout(2500);
+  check(
+    "إنشاء حساب محرّرة ينجح",
+    (await page.locator("table tbody").innerText()).includes(newEmail),
+  );
+
+  // بريد مكرّر يُرفض — وإلا صار حسابان بمدخل دخول واحد
+  await page.getByLabel("الاسم").fill("تكرار");
+  await page.getByLabel("البريد الإلكتروني").fill(newEmail);
+  await page.getByLabel("كلمة مرور مبدئية").fill("TestEditor123x");
+  await page.getByRole("button", { name: "إنشاء الحساب" }).click();
+  await page.waitForTimeout(2000);
+  check(
+    "بريد مكرّر يُرفض",
+    (await page.locator("body").innerText()).includes("مسجّل بالفعل"),
+  );
+
   // إنشاء مقال جديد
   const slug = `test-article-${Date.now()}`;
   await page.goto(`${BASE}/admin/articles/new`, { waitUntil: "domcontentloaded" });

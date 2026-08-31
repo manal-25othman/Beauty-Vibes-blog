@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/authors", label: "الكتّاب" },
   { href: "/admin/messages", label: "الرسائل" },
   { href: "/admin/subscribers", label: "المشتركون" },
+  { href: "/admin/users", label: "الحسابات", adminOnly: true },
   { href: "/admin/settings", label: "الإعدادات", adminOnly: true },
   { href: "/admin/account", label: "حسابي" },
 ];
