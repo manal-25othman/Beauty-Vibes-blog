@@ -9,7 +9,7 @@ type Props = {
 
 export function NewsletterCta({
   source,
-  title = "نشرة جمالِك الأسبوعية",
+  title = "نشرة Beauty Vibes الأسبوعية",
   description = "مقال مختار وتوصية عملية واحدة كل أسبوع، دون إغراق بريدك.",
   compact = false,
 }: Props) {

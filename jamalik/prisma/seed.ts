@@ -12,6 +12,7 @@ import bcrypt from "bcryptjs";
 import { authors, categories } from "./seed-data/taxonomy";
 import { bloggerArticles } from "./seed-data/articles-blogger";
 import type { SeedArticle } from "./seed-data/types";
+import { siteConfig } from "../src/config/site";
 import { slugify } from "../src/lib/slug";
 
 // التعبئة عملية دفعية وقت البناء، لا وقت التشغيل — فتُشغَّل عبر الاتصال المباشر
@@ -67,9 +68,8 @@ async function seedAdminUser() {
 
 async function seedSettings() {
   const defaults: Record<string, string> = {
-    siteName: "جمالِك",
-    siteDescription:
-      "مجلة رقمية عربية متخصصة في العناية بالبشرة والشعر والمكياج والعطور.",
+    siteName: siteConfig.name,
+    siteDescription: siteConfig.description,
     contactEmail: "",
     gaMeasurementId: "",
     googleSiteVerification: "",
@@ -301,7 +301,7 @@ async function pruneDemoContent() {
 }
 
 async function main() {
-  console.log("بدء تعبئة قاعدة بيانات «جمالِك»…\n");
+  console.log("بدء تعبئة قاعدة بيانات «Beauty Vibes»…\n");
 
   await seedAdminUser();
   await seedSettings();

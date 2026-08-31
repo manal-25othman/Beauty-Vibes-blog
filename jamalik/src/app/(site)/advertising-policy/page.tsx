@@ -12,7 +12,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "سياسة الإعلانات",
   description:
-    "كيف نعرض الإعلانات في جمالِك: مواضعها، ما نرفضه، وكيف نفصل بين المحتوى التحريري والمحتوى المموّل.",
+    "كيف نعرض الإعلانات في Beauty Vibes: مواضعها، ما نرفضه، وكيف نفصل بين المحتوى التحريري والمحتوى المموّل.",
   path: "/advertising-policy",
 });
 

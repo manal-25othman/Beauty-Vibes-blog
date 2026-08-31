@@ -10,14 +10,14 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "النشرة البريدية",
   description:
-    "اشتركي في نشرة جمالِك الأسبوعية: مقالة مختارة وتوصية عملية واحدة كل أسبوع، دون إغراق لبريدك.",
+    "اشتركي في نشرة Beauty Vibes الأسبوعية: مقالة مختارة وتوصية عملية واحدة كل أسبوع، دون إغراق لبريدك.",
   path: "/newsletter",
 });
 
 export default function NewsletterPage() {
   return (
     <PageShell
-      title="نشرة جمالِك الأسبوعية"
+      title="نشرة Beauty Vibes الأسبوعية"
       description="رسالة واحدة كل أسبوع: مقالة مختارة، ونصيحة عملية قابلة للتطبيق فورًا."
       path="/newsletter"
     >

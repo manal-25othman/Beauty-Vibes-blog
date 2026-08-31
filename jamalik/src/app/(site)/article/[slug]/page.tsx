@@ -291,7 +291,7 @@ export default async function ArticlePage({ params }: PageProps) {
               <NewsletterCta
                 source={`article_${article.slug}`}
                 title="أعجبك المقال؟"
-                description="اشتركي لتصلك مقالة مختارة كل أسبوع من محررات جمالِك."
+                description="اشتركي لتصلك مقالة مختارة كل أسبوع من محررات Beauty Vibes."
               />
             </div>
 

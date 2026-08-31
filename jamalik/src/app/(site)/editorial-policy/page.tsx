@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "السياسة التحريرية",
   description:
-    "كيف نختار مواضيعنا ونكتبها ونراجعها ونصحّحها في جمالِك، وما القواعد التي تحكم علاقتنا بالمعلنين.",
+    "كيف نختار مواضيعنا ونكتبها ونراجعها ونصحّحها في Beauty Vibes، وما القواعد التي تحكم علاقتنا بالمعلنين.",
   path: "/editorial-policy",
 });
 

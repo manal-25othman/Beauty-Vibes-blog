@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "سياسة ملفات تعريف الارتباط",
   description:
-    "ما ملفات تعريف الارتباط التي يستخدمها موقع جمالِك، وما الغرض من كل منها، وكيف تتحكّمين بها من متصفحك.",
+    "ما ملفات تعريف الارتباط التي يستخدمها موقع Beauty Vibes، وما الغرض من كل منها، وكيف تتحكّمين بها من متصفحك.",
   path: "/cookie-policy",
 });
 

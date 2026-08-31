@@ -62,7 +62,7 @@ export async function subscribeToNewsletter(
 
     if (existing?.status === "SUBSCRIBED") {
       // رسالة محايدة: لا نؤكّد أو ننفي وجود البريد في القائمة.
-      return formSuccess("تم تسجيل بريدك في النشرة. شكرًا لاهتمامك بجمالِك!");
+      return formSuccess("تم تسجيل بريدك في النشرة. شكرًا لاشتراكك في Beauty Vibes!");
     }
 
     if (existing) {
@@ -86,7 +86,7 @@ export async function subscribeToNewsletter(
       console.error(`[newsletter] فشلت المزامنة مع ${sync.provider}: ${sync.error}`);
     }
 
-    return formSuccess("تم تسجيل بريدك في النشرة. شكرًا لاهتمامك بجمالِك!");
+    return formSuccess("تم تسجيل بريدك في النشرة. شكرًا لاشتراكك في Beauty Vibes!");
   } catch (error) {
     console.error("[newsletter] خطأ غير متوقّع:", error);
     return formError("حدث خطأ أثناء الحفظ. الرجاء المحاولة بعد قليل.");

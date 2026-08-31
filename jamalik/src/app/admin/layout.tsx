@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 /** لوحة التحكم لا تُفهرَس مطلقًا — تأكيد على مستوى الميتا فوق ترويسات HTTP. */
 export const metadata: Metadata = {
-  title: { default: "لوحة التحكم", template: "%s | لوحة تحكم جمالِك" },
+  title: { default: "لوحة التحكم", template: "%s | لوحة تحكم Beauty Vibes" },
   robots: {
     index: false,
     follow: false,

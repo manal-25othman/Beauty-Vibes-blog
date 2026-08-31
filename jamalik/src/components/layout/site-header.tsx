@@ -34,7 +34,7 @@ export function HeaderSkeleton() {
     <header className="h-header border-b border-line bg-surface">
       <div className="container-page flex h-full items-center">
         <span className="font-display text-2xl font-bold text-ink">
-          {"جمالِك"}
+          {"Beauty Vibes"}
         </span>
       </div>
     </header>

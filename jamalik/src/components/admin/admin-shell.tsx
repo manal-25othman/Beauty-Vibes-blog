@@ -54,7 +54,7 @@ export function AdminShell({
               href="/admin"
               className="font-display text-xl font-extrabold text-ink"
             >
-              جمالِك
+              Beauty Vibes
             </Link>
             <p className="text-xs text-ink-faint">لوحة التحكم</p>
           </div>

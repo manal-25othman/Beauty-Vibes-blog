@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "إخلاء المسؤولية",
   description:
-    "حدود المحتوى المنشور في جمالِك: محتوى تحريري وتثقيفي لا يُغني عن استشارة مختص، ولا يقدّم تشخيصًا أو علاجًا.",
+    "حدود المحتوى المنشور في Beauty Vibes: محتوى تحريري وتثقيفي لا يُغني عن استشارة مختص، ولا يقدّم تشخيصًا أو علاجًا.",
   path: "/disclaimer",
 });
 

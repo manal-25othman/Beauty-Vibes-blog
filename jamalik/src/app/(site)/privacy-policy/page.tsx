@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "سياسة الخصوصية",
   description:
-    "ما البيانات التي يجمعها موقع جمالِك، ولماذا، وكيف تُعالَج وتُحفَظ، وما حقوقك في التحكّم بها.",
+    "ما البيانات التي يجمعها موقع Beauty Vibes، ولماذا، وكيف تُعالَج وتُحفَظ، وما حقوقك في التحكّم بها.",
   path: "/privacy-policy",
 });
 

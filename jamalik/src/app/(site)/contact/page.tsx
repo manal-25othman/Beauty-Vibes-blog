@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = buildMetadata({
   title: "اتصلي بنا",
   description:
-    "راسلي فريق جمالِك للاستفسارات التحريرية، أو الإبلاغ عن خطأ في مقال، أو اقتراح موضوع جديد.",
+    "راسلي فريق Beauty Vibes للاستفسارات التحريرية، أو الإبلاغ عن خطأ في مقال، أو اقتراح موضوع جديد.",
   path: "/contact",
 });
 

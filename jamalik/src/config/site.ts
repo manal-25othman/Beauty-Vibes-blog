@@ -4,17 +4,18 @@
  */
 
 export const siteConfig = {
-  name: "جمالِك",
-  nameEn: "Jamalik",
-  tagline: "مجلة الجمال والعناية العربية",
+  name: "Beauty Vibes",
+  nameEn: "Beauty Vibes",
+  tagline: "مجلة الجمال والصحة العربية",
   description:
-    "مجلة رقمية عربية متخصصة في العناية بالبشرة والشعر والمكياج والعطور، بمحتوى تحريري دقيق ومراجَع.",
+    "مدونة عربية متخصصة في الوصفات الصحية والتغذية السليمة وفوائد الأعشاب والعناية بالبشرة والشعر والصحة النسائية والجمال الطبيعي.",
   locale: "ar_AR",
   lang: "ar",
   direction: "rtl",
   /** يُستخدم عند غياب NEXT_PUBLIC_SITE_URL — يمنع روابط canonical المكسورة. */
   fallbackUrl: "http://localhost:3000",
-  twitterHandle: "@jamalik",
+  /** يبقى فارغًا حتى يوجد حساب فعلي — بطاقة X لا تُنسب إلى حساب لا نملكه. */
+  twitterHandle: "",
   /** عدد المقالات في كل صفحة من صفحات الأرشيف والتصنيفات. */
   articlesPerPage: 12,
   searchResultsPerPage: 10,
@@ -35,10 +36,10 @@ export function absoluteUrl(path = "/"): string {
 export const mainNavigation = [
   { label: "الرئيسية", href: "/" },
   { label: "المقالات", href: "/articles" },
-  { label: "العناية بالبشرة", href: "/category/skin-care" },
+  { label: "الجمال الطبيعي", href: "/category/natural-beauty" },
   { label: "العناية بالشعر", href: "/category/hair-care" },
-  { label: "المكياج", href: "/category/makeup" },
-  { label: "العطور", href: "/category/perfumes" },
+  { label: "العناية بالبشرة", href: "/category/skin-care" },
+  { label: "الصحة والتغذية", href: "/category/health-nutrition" },
   { label: "من نحن", href: "/about" },
 ] as const;
 

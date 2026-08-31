@@ -29,6 +29,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return buildMetadata({
     title: `${settings.siteName} — ${siteConfig.tagline}`,
+    // العنوان يحمل اسم الموقع، فلا يُضاف إليه القالب مرة ثانية.
+    titleIsAbsolute: true,
     description: settings.siteDescription,
     path: "/",
     siteName: settings.siteName,

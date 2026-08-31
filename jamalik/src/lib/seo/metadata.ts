@@ -4,6 +4,11 @@ import { truncate } from "@/lib/format";
 
 export type BuildMetadataOptions = {
   title: string;
+  /**
+   * عنوان مكتفٍ بذاته: لا يُلحق به قالب `%s | اسم الموقع`.
+   * تحتاجه الصفحة التي يحمل عنوانها اسم الموقع أصلًا، وإلا تكرّر مرّتين.
+   */
+  titleIsAbsolute?: boolean;
   description: string;
   /** المسار النسبي للصفحة — يُستخدم في canonical و Open Graph. */
   path: string;
@@ -37,7 +42,7 @@ export function buildMetadata(options: BuildMetadataOptions): Metadata {
   const description = truncate(options.description || siteConfig.description, 165);
 
   return {
-    title: options.title,
+    title: options.titleIsAbsolute ? { absolute: options.title } : options.title,
     description,
     alternates: {
       canonical,

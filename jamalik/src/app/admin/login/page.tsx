@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
             href="/"
             className="font-display text-3xl font-extrabold text-ink transition-colors hover:text-accent"
           >
-            جمالِك
+            Beauty Vibes
           </Link>
           <h1 className="mt-6 font-display text-2xl font-bold text-ink">
             تسجيل الدخول إلى لوحة التحكم

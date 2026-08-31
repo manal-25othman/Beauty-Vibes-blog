@@ -29,7 +29,7 @@ export async function articlesArchiveMetadata(page: number): Promise<Metadata> {
     title:
       page > 1 ? `كل المقالات — الصفحة ${formatNumber(page)}` : "كل المقالات",
     description:
-      "أرشيف مقالات جمالِك في العناية بالبشرة والشعر والمكياج والعطور، مرتّبة من الأحدث إلى الأقدم.",
+      "أرشيف مقالات Beauty Vibes في العناية بالبشرة والشعر والمكياج والعطور، مرتّبة من الأحدث إلى الأقدم.",
     // كل صفحة ترقيم canonical لنفسها: محتواها مختلف، وتوجيهها كلها
     // إلى الصفحة الأولى يُخفي بقية الأرشيف عن الفهرسة.
     path: archivePageHref(BASE_PATH, page),
@@ -66,7 +66,7 @@ export async function ArticlesArchive({ page }: { page: number }) {
           collectionPageSchema({
             url: absoluteUrl(archivePageHref(BASE_PATH, page)),
             name: page > 1 ? `كل المقالات — الصفحة ${formatNumber(page)}` : "كل المقالات",
-            description: "أرشيف مقالات جمالِك.",
+            description: "أرشيف مقالات Beauty Vibes.",
             items: result.items.map((article) => ({
               name: article.title,
               url: absoluteUrl(`/article/${article.slug}`),

@@ -20,7 +20,7 @@ export default function NotFound() {
             href="/"
             className="font-display text-2xl font-bold text-ink transition-colors hover:text-accent"
           >
-            جمالِك
+            Beauty Vibes
           </Link>
         </div>
       </header>
