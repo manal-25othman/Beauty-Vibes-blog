@@ -51,8 +51,20 @@ const browser = await chromium.launch(
 
 const consoleErrors = [];
 
+/**
+ * لا ننتظر سكون الشبكة (networkidle).
+ *
+ * صفحات المقالات تحمل صورًا كبيرة يحوّلها Next إلى AVIF عند أول طلب. التحويل
+ * نفسه سريع، لكن ستّ صور متزامنة على جهاز واحد تُبقي طلبًا معلّقًا دقائق، فلا
+ * تسكن الشبكة أبدًا ويسقط الاختبار على مهلته لا على عيب في الصفحة. والانتظار
+ * غير لازم أصلًا: مكوّن الصورة يعلن أبعادها، فالتخطيط مستقرّ منذ بناء DOM.
+ */
+const NAV_TIMEOUT_MS = 60_000;
+
 async function newPage(width, height = 900) {
   const context = await browser.newContext({ viewport: { width, height } });
+  context.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+  context.setDefaultTimeout(NAV_TIMEOUT_MS);
   const page = await context.newPage();
   page.on("console", (msg) => {
     if (msg.type() === "error") consoleErrors.push(`${page.url()} :: ${msg.text()}`);
@@ -85,7 +97,7 @@ for (const width of VIEWPORTS) {
   let overflowing = [];
 
   for (const path of PAGES) {
-    await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
@@ -100,7 +112,7 @@ for (const width of VIEWPORTS) {
 {
   const { context, page } = await newPage(1280);
 
-  await page.goto(`${BASE}${ARTICLE_PATH}`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}${ARTICLE_PATH}`, { waitUntil: "domcontentloaded" });
 
   check("عنوان H1 واحد فقط", (await page.locator("h1").count()) === 1);
   check("متن المقال يُصيَّر محتوى", (await page.locator(".article-body p").count()) > 0);
@@ -141,7 +153,7 @@ for (const width of VIEWPORTS) {
 // --------------------------------------------------------- 3. قائمة الجوال والبحث
 {
   const { context, page } = await newPage(375);
-  await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "فتح القائمة" }).click();
   check("قائمة الجوال تفتح", await page.getByRole("navigation", { name: "قائمة الجوال" }).isVisible());
@@ -167,7 +179,7 @@ for (const width of VIEWPORTS) {
   const { context, page } = await newPage(1280);
   const email = `test-${Date.now()}@example.com`;
 
-  await page.goto(`${BASE}/newsletter`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/newsletter`, { waitUntil: "domcontentloaded" });
   await page.locator('input[name="email"]').first().fill(email);
   await page.getByRole("button", { name: "اشتركي" }).click();
   await page.waitForTimeout(2500);
@@ -176,7 +188,7 @@ for (const width of VIEWPORTS) {
   check("الاشتراك في النشرة ينجح", text.includes("تم تسجيل بريدك"), text.slice(0, 120));
 
   // بريد غير صالح يجب أن يُرفض برسالة واضحة
-  await page.goto(`${BASE}/newsletter`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/newsletter`, { waitUntil: "domcontentloaded" });
   await page.locator('input[name="email"]').first().fill("not-an-email");
   await page.getByRole("button", { name: "اشتركي" }).click();
   await page.waitForTimeout(2000);
@@ -189,7 +201,7 @@ for (const width of VIEWPORTS) {
 // -------------------------------------------------------------- 5. نموذج التواصل
 {
   const { context, page } = await newPage(1280);
-  await page.goto(`${BASE}/contact`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/contact`, { waitUntil: "domcontentloaded" });
 
   await page.locator("#contact-name").fill("سارة تجريبية");
   await page.locator("#contact-email").fill(`contact-${Date.now()}@example.com`);
@@ -215,7 +227,7 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
 } else {
   const { context, page } = await newPage(1440);
 
-  await page.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   check("زائر بلا جلسة يُحوَّل لصفحة الدخول", page.url().includes("/admin/login"));
 
   // بيانات خاطئة
@@ -237,7 +249,7 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
 
   // إنشاء مقال جديد
   const slug = `test-article-${Date.now()}`;
-  await page.goto(`${BASE}/admin/articles/new`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/admin/articles/new`, { waitUntil: "domcontentloaded" });
 
   await page.getByLabel("عنوان المقال").fill("مقال اختباري للتحقق من لوحة التحكم");
   await page.getByLabel("الرابط (slug)").fill(slug);
@@ -268,7 +280,7 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
 
   // المقال المنشور يظهر على الموقع العام
   const publicResponse = await page.goto(`${BASE}/article/${slug}`, {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
   });
   check("المقال الجديد يظهر على الموقع", publicResponse?.status() === 200);
   check("صندوق النصيحة يعرض عنوانًا", (await page.locator(".callout-title").count()) > 0);
@@ -278,7 +290,7 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   );
 
   // حذفه لتنظيف قاعدة البيانات
-  await page.goto(`${BASE}/admin/articles?q=${slug}`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/admin/articles?q=${slug}`, { waitUntil: "domcontentloaded" });
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "حذف" }).first().click();
   await page.waitForTimeout(2500);
@@ -288,7 +300,7 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   );
 
   // صفحة الإعدادات
-  await page.goto(`${BASE}/admin/settings`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/admin/settings`, { waitUntil: "domcontentloaded" });
   check("صفحة الإعدادات تفتح", await page.getByRole("heading", { name: "الإعدادات" }).isVisible());
 
   // معرّف قياس بصيغة خاطئة يجب أن يُرفض

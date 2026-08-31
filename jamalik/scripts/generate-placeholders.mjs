@@ -71,10 +71,7 @@ function logoSvg() {
 }
 
 const AUTHOR_AVATARS = {
-  "layan-alharbi": ["ل", CATEGORY_THEMES["skin-care"]],
-  "razan-alkhatib": ["ر", CATEGORY_THEMES["hair-care"]],
-  "nour-alqasimi": ["ن", CATEGORY_THEMES.makeup],
-  "salma-benamor": ["س", CATEGORY_THEMES.perfumes],
+  "miss-manal": ["م", CATEGORY_THEMES["natural-beauty"]],
 };
 
 async function main() {
