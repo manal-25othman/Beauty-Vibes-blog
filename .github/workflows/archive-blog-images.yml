@@ -1,0 +1,49 @@
+# أرشفة صور المقالات المنقولة من Blogger داخل المستودع.
+#
+# الصور اليوم تُنزَّل في كل بناء على Vercel. يعمل ذلك، لكنه يُبقي الموقع معلّقًا
+# بخوادم Blogger: لو أُوقفت المدونة الأصلية — وهو ما نوصي به لتفادي المحتوى
+# المكرّر — فقد تختفي الصور عند أول إعادة بناء بعدها.
+#
+# هذه المهمة تُنزّلها مرة واحدة وتودعها في المستودع، فتصير ملكًا للمشروع.
+# بعدها يتخطّاها سكربت البناء تلقائيًا لأن الملفات موجودة.
+#
+# تعمل تلقائيًا عند كل دفعة إلى main، وتخرج فورًا متى اكتمل الأرشيف — فالمهمة
+# تُنجز نفسها دون انتظار أحد. ويمكن تشغيلها يدويًا من تبويب Actions عند الحاجة.
+
+name: أرشفة صور المقالات
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # السكربت لا يعتمد على أي حزمة خارجية، فلا حاجة إلى npm install.
+      - name: تنزيل الصور
+        working-directory: jamalik
+        run: node scripts/fetch-blogger-images.mjs
+
+      - name: إيداع ما استُجدّ
+        working-directory: jamalik
+        run: |
+          if git diff --quiet -- public/images/blog; then
+            echo "لا صور جديدة — الأرشيف مكتمل."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/images/blog
+          git commit -m "Archive migrated article images in the repository"
+          git push

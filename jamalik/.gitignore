@@ -41,8 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# صور المقالات المنقولة: تُنزَّل وقت البناء عبر scripts/fetch-blogger-images.mjs.
-# لجعلها دائمة في المستودع، احذفي هذين السطرين وأضيفي الملفات إلى Git.
-/public/images/blog/
+# مخرجات وسيطة لنقل المدونة — تُولَّد محليًا ولا يحتاجها البناء.
+# أمّا scripts/blogger/images.json وpublic/images/blog/ فمتتبَّعان عمدًا: الأول
+# يقرأه البناء ليعرف ما يُنزّل، والثاني أرشيف الصور الذي يحرّر الموقع من Blogger.
 scripts/blogger/raw.json
 scripts/blogger/out/

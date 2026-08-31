@@ -49,7 +49,17 @@ export class ImageRegistry {
 
   constructor(private readonly slug: string) {}
 
-  register(remote: string): string {
+  /**
+   * روابط Blogger تحمل مقطع حجم: ‎/s1536/‎ للأصل، و‎/w320-h213/‎ لمصغّرة.
+   * حين تأتي الصورة من سمة src وحدها بلا رابط للأصل تكون مصغّرة، ووضعها غلافًا
+   * بعرض الصفحة يُظهرها مهشّمة — فتُطلَب نسخة كبيرة بدلها.
+   */
+  private static fullSize(remote: string): string {
+    return remote.replace(/\/w\d+-h\d+(?:-[a-z]+)?\//, "/s1600/");
+  }
+
+  register(rawRemote: string): string {
+    const remote = ImageRegistry.fullSize(rawRemote);
     const known = this.map.get(remote);
     if (known) return known;
 
@@ -576,7 +586,9 @@ if (trashedDuplicate) {
 mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(`${OUT_DIR}/articles.json`, JSON.stringify(articles, null, 1), "utf8");
 writeFileSync(`${OUT_DIR}/redirects.json`, JSON.stringify(redirects, null, 1), "utf8");
-writeFileSync(`${OUT_DIR}/images.json`, JSON.stringify(imageJobs, null, 1), "utf8");
+// سجلّ الصور يُقرأ وقت البناء على المنصّة، فيلزم أن يكون متتبَّعًا في Git —
+// بخلاف بقية المخرجات التي تُولَّد محليًا فقط.
+writeFileSync("scripts/blogger/images.json", JSON.stringify(imageJobs, null, 1), "utf8");
 writeFileSync(`${OUT_DIR}/warnings.json`, JSON.stringify(warnings, null, 1), "utf8");
 
 console.log(`مقالات محوّلة: ${articles.length}`);

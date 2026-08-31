@@ -117,9 +117,23 @@
 | مقالات بلا وصف ميتا | صفر |
 | صور بانتظار التنزيل | ٣٨ — عند أول بناء على Vercel |
 
-**الصور:** كل صورة تشير إلى `‎/images/blog/<slug>-N.<ext>`، ويُنزّلها
-`scripts/fetch-blogger-images.mjs` من Blogger داخل بناء Vercel قبل `next build`.
-فشل تنزيل صورة لا يُفشل البناء — تظهر الصورة النائبة الخاصة بالتصنيف بدلًا منها.
+**الصور — مسارها بالكامل:**
+
+كل صورة تشير إلى `‎/images/blog/<slug>-N.<ext>`، وسجلّها في
+`scripts/blogger/images.json` (متتبَّع في Git عمدًا، فالبناء يقرأه).
+
+١. **مهمة GitHub** (`.github/workflows/archive-blog-images.yml`) تعمل عند كل دفعة
+   إلى `main`، تُنزّل الصور وتودعها في المستودع مرة واحدة. بعدها تصير ملكًا
+   للمشروع، فلا يضرّه إيقاف المدونة الأصلية.
+٢. **بناء Vercel** يشغّل `scripts/fetch-blogger-images.mjs` كشبكة أمان: يتخطّى
+   الموجود ويُنزّل الناقص.
+
+المُنزِّل يعيد المحاولة ثلاث مرات بتباعد متزايد، ويرفض ما ليس صورة (صفحة خطأ
+بترويسة ٢٠٠) وما حجمه مريب، وينزّل ستّ صور بالتوازي. فشل صورة يُطبع تحذيرًا
+ولا يُفشل النشر.
+
+> اختُبر السكربت على خادم محلي يحاكي: نجاحًا، وفشلًا عابرًا يتعافى بالإعادة،
+> وصفحة HTML بترويسة ٢٠٠، وملفًا مبتورًا، و٤٠٤ — وتصرّف في الخمس كما ينبغي.
 
 ---
 
@@ -245,7 +259,9 @@ Fenugreek · Henna in Arab traditional beauty.
 | `scripts/blogger/emit-seed.ts` | جديد — توليد ملفات البذور |
 | `scripts/blogger/verify.py` | جديد — فحص مطابقة النصّ |
 | `scripts/blogger/blogger-export.atom` | جديد — المصدر الأصلي |
-| `scripts/fetch-blogger-images.mjs` | جديد — تنزيل الصور وقت البناء |
+| `scripts/fetch-blogger-images.mjs` | جديد — تنزيل الصور (إعادة محاولة + تحقّق + توازٍ) |
+| `scripts/blogger/images.json` | جديد (مُولَّد، متتبَّع) — سجلّ الصور الـ٣٨ |
+| `.github/workflows/archive-blog-images.yml` | جديد — أرشفة الصور داخل المستودع |
 | `prisma/seed-data/articles-blogger.ts` | جديد (مُولَّد) — ٣٨ مقالًا |
 | `src/config/blogger-redirects.ts` | جديد (مُولَّد) — ٤٤ تحويلًا |
 | `prisma/seed-data/taxonomy.ts` | أُعيد بناؤه على المحتوى الفعلي |
