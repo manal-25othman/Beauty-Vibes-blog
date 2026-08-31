@@ -34,10 +34,19 @@ export type SeedArticle = {
   focusKeyword: string;
   secondaryKeywords: string[];
   featuredImageAlt: string;
+  /** صورة الغلاف. عند غيابها تُستخدم الصورة النائبة الخاصة بالتصنيف. */
+  featuredImage?: string | null;
   faqs?: SeedFaq[];
   isFeatured?: boolean;
   isEditorPick?: boolean;
-  /** عدد الأيام قبل اليوم — لتوزيع تواريخ النشر بشكل واقعي. */
-  daysAgo: number;
+  /** تاريخ النشر الأصلي (ISO). يتقدّم على daysAgo متى وُجد. */
+  publishedAt?: string;
+  /**
+   * تاريخ آخر تعديل في المصدر — للتوثيق فقط. عمود updatedAt يحمل @updatedAt
+   * في Prisma فتُدار قيمته آليًا ولا تُكتب يدويًا.
+   */
+  updatedAt?: string;
+  /** عدد الأيام قبل اليوم — بديل daysAgo حين لا يوجد تاريخ حقيقي. */
+  daysAgo?: number;
   viewCount: number;
 };

@@ -22,8 +22,8 @@ const CATEGORY_THEMES = {
   nails: { from: "#FBEDE6", to: "#F2D6C4", accent: "#C98A63", label: "الأظافر" },
   "natural-beauty": { from: "#EDF2EC", to: "#D3E0D2", accent: "#6F8F72", label: "الجمال الطبيعي" },
   "beauty-products": { from: "#F1EEEA", to: "#DED7CE", accent: "#9A8B77", label: "منتجات الجمال" },
-  "beauty-tips": { from: "#F5EFE6", to: "#E5D8C3", accent: "#A98F5F", label: "نصائح الجمال" },
-  "beauty-trends": { from: "#F2EDF4", to: "#DED2E6", accent: "#8C74A0", label: "ترندات الجمال" },
+  "health-nutrition": { from: "#EDF3EE", to: "#D2E2D6", accent: "#7C9885", label: "الصحة والتغذية" },
+  "womens-health": { from: "#F8E9EC", to: "#EDCFD7", accent: "#C0798D", label: "صحة المرأة" },
   default: { from: "#F5F0EB", to: "#E3D8CE", accent: "#A28A75", label: "جمالِك" },
 };
 

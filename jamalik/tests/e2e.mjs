@@ -24,18 +24,24 @@ function check(name, ok, detail = "") {
 }
 
 const VIEWPORTS = [320, 375, 390, 430, 768, 1024, 1440];
-const PAGES = [
+// مسارات ثابتة. أما مسار مقال ومسار كاتبة فيُشتقّان من المحتوى الفعلي وقت
+// التشغيل: تثبيتهما في الملف يربط الاختبار بمحتوى بعينه، فيسقط عند تغييره.
+const STATIC_PAGES = [
   "/",
   "/articles",
-  "/article/skincare-routine-for-beginners",
-  "/category/skin-care",
-  "/author/layan-alharbi",
-  "/search?q=%D8%A7%D9%84%D8%A8%D8%B4%D8%B1%D8%A9",
+  "/categories",
+  "/search?q=%D8%A7%D9%84%D8%B4%D8%B9%D8%B1",
   "/about",
   "/contact",
   "/newsletter",
   "/privacy-policy",
 ];
+
+/** أول رابط من نوع معيّن على صفحة — لاشتقاق مسارات المحتوى الحيّة. */
+async function firstHref(page, path, prefix) {
+  await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+  return page.locator(`a[href^="${prefix}"]`).first().getAttribute("href");
+}
 
 // executablePath اختياري: Playwright يجد متصفّحه بنفسه عادة، لكن بعض البيئات
 // تثبّت Chromium في مسار مخصّص.
@@ -54,6 +60,24 @@ async function newPage(width, height = 900) {
   page.on("pageerror", (err) => consoleErrors.push(`${page.url()} :: ${err.message}`));
   return { context, page };
 }
+
+// ------------------------------------------------- اشتقاق مسارات المحتوى الحيّة
+const ARTICLE_PATH = await (async () => {
+  const { context, page } = await newPage(1280);
+  const href = await firstHref(page, "/articles", "/article/");
+  await context.close();
+  if (!href) throw new Error("لم يُعثر على أي مقال منشور — تحقّقي من تعبئة قاعدة البيانات.");
+  return href;
+})();
+
+const AUTHOR_PATH = await (async () => {
+  const { context, page } = await newPage(1280);
+  const href = await firstHref(page, ARTICLE_PATH, "/author/");
+  await context.close();
+  return href ?? "/articles";
+})();
+
+const PAGES = [...STATIC_PAGES, ARTICLE_PATH, AUTHOR_PATH];
 
 // ---------------------------------------------------------------- 1. التجاوب
 for (const width of VIEWPORTS) {
@@ -76,13 +100,10 @@ for (const width of VIEWPORTS) {
 {
   const { context, page } = await newPage(1280);
 
-  await page.goto(`${BASE}/article/skincare-routine-for-beginners`, {
-    waitUntil: "networkidle",
-  });
+  await page.goto(`${BASE}${ARTICLE_PATH}`, { waitUntil: "networkidle" });
 
   check("عنوان H1 واحد فقط", (await page.locator("h1").count()) === 1);
-  check("صندوق النصيحة يعرض عنوانًا", (await page.locator(".callout-title").count()) > 0);
-  check("فهرس المحتويات ظاهر", (await page.locator("nav[aria-labelledby='toc-heading']").count()) > 0);
+  check("متن المقال يُصيَّر محتوى", (await page.locator(".article-body p").count()) > 0);
 
   // كل صور المحتوى تحمل نصًا بديلًا (alt موجود ولو فارغًا للزخرفية)
   const imagesWithoutAlt = await page.evaluate(
@@ -97,16 +118,22 @@ for (const width of VIEWPORTS) {
   );
   check("رابط تخطّي المحتوى أول عنصر في ترتيب التركيز", skipFocused);
 
-  // التنقّل عبر فهرس المحتويات يصل إلى العنوان فعلًا
-  const firstTocHref = await page
-    .locator("nav[aria-labelledby='toc-heading'] a")
-    .first()
-    .getAttribute("href");
-  const targetExists = await page.evaluate(
-    (href) => Boolean(document.querySelector(`[id="${decodeURIComponent(href.slice(1))}"]`)),
-    firstTocHref,
-  );
-  check("رابط الفهرس يطابق عنوانًا موجودًا", targetExists, firstTocHref ?? "");
+  // التنقّل عبر فهرس المحتويات يصل إلى العنوان فعلًا.
+  // مقال بلا عناوين حالة مشروعة — عندها يجب ألّا يُعرض فهرس أصلًا، لا أن يُعرض فارغًا.
+  const tocLinks = page.locator("nav[aria-labelledby='toc-heading'] a");
+  const tocCount = await tocLinks.count();
+  const headingCount = await page.locator(".article-body :is(h2, h3)").count();
+
+  if (headingCount === 0) {
+    check("مقال بلا عناوين لا يعرض فهرسًا فارغًا", tocCount === 0);
+  } else {
+    const firstTocHref = await tocLinks.first().getAttribute("href");
+    const targetExists = await page.evaluate(
+      (href) => Boolean(document.querySelector(`[id="${decodeURIComponent(href.slice(1))}"]`)),
+      firstTocHref,
+    );
+    check("رابط الفهرس يطابق عنوانًا موجودًا", targetExists, firstTocHref ?? "");
+  }
 
   await context.close();
 }
@@ -222,7 +249,8 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     .fill(
       "## القسم الأول\n\n" +
         "نص تجريبي ".repeat(60) +
-        "\n\n## القسم الثاني\n\nرابط [داخلي](/article/sunscreen-spf-guide) هنا.\n\n## القسم الثالث\n\nخاتمة.",
+        `\n\n## القسم الثاني\n\nرابط [داخلي](${ARTICLE_PATH}) هنا.\n\n` +
+        ":::tip[عنوان النصيحة]\nنصّ النصيحة داخل الصندوق.\n:::\n\n## القسم الثالث\n\nخاتمة.",
     );
   await page.getByLabel("التصنيف").selectOption({ index: 1 });
   await page.getByLabel("الكاتبة").selectOption({ index: 1 });
@@ -243,6 +271,11 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     waitUntil: "networkidle",
   });
   check("المقال الجديد يظهر على الموقع", publicResponse?.status() === 200);
+  check("صندوق النصيحة يعرض عنوانًا", (await page.locator(".callout-title").count()) > 0);
+  check(
+    "فهرس المحتويات يُبنى من عناوين المقال",
+    (await page.locator("nav[aria-labelledby='toc-heading'] a").count()) >= 3,
+  );
 
   // حذفه لتنظيف قاعدة البيانات
   await page.goto(`${BASE}/admin/articles?q=${slug}`, { waitUntil: "networkidle" });

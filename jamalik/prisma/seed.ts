@@ -10,8 +10,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { authors, categories } from "./seed-data/taxonomy";
-import { skinAndHairArticles } from "./seed-data/articles-skin-hair";
-import { otherArticles } from "./seed-data/articles-misc";
+import { bloggerArticles } from "./seed-data/articles-blogger";
 import type { SeedArticle } from "./seed-data/types";
 import { slugify } from "../src/lib/slug";
 
@@ -25,7 +24,7 @@ const prisma = new PrismaClient({
   datasourceUrl: process.env.DIRECT_URL || process.env.DATABASE_URL,
 });
 
-const allArticles: SeedArticle[] = [...skinAndHairArticles, ...otherArticles];
+const allArticles: SeedArticle[] = bloggerArticles;
 
 /** نسخة مستقلة عن src/ حتى يبقى السكربت قابلًا للتشغيل بمعزل عن التطبيق. */
 function estimateReadingTime(content: string): number {
@@ -181,13 +180,16 @@ async function seedArticles() {
       );
     }
 
-    const publishedAt = new Date(Date.now() - article.daysAgo * 24 * 60 * 60 * 1000);
+    // التاريخ الأصلي من المدونة المنقولة؛ وdaysAgo بديل لمحتوى بلا تاريخ.
+    const publishedAt = article.publishedAt
+      ? new Date(article.publishedAt)
+      : new Date(Date.now() - (article.daysAgo ?? 0) * 24 * 60 * 60 * 1000);
 
     const data = {
       title: article.title,
       excerpt: article.excerpt,
       content: article.content,
-      featuredImage: `/images/covers/${article.categorySlug}.svg`,
+      featuredImage: article.featuredImage || `/images/covers/${article.categorySlug}.svg`,
       featuredImageAlt: article.featuredImageAlt,
       categoryId,
       authorId,
@@ -233,6 +235,71 @@ async function seedArticles() {
   console.log(`✓ المقالات: ${allArticles.length}`);
 }
 
+/**
+ * إزالة المحتوى التجريبي الذي رافق المشروع قبل نقل مدونة العميلة.
+ *
+ * الحذف مقصور على قوائم صريحة بمعرّفات معروفة — لا يُحذف شيء بالاستنتاج، فلا
+ * يمسّ مقالًا تكتبه المحرّرة لاحقًا. والتصنيفات والكتّاب لا تُحذف إلا بعد
+ * التأكّد من خلوّها من أي مقال.
+ */
+const DEMO_ARTICLE_SLUGS = [
+  "natural-everyday-makeup",
+  "how-to-choose-foundation-shade",
+  "fragrance-families-guide",
+  "make-your-perfume-last-longer",
+  "body-care-after-shower",
+  "home-manicure-basics",
+  "daily-beauty-habits",
+  "skincare-routine-for-beginners",
+  "how-to-identify-your-skin-type",
+  "sunscreen-spf-guide",
+  "how-to-choose-the-right-moisturizer",
+  "winter-skincare-guide",
+  "dry-hair-care-routine",
+  "hair-loss-common-causes",
+  "hair-oils-guide",
+];
+
+const DEMO_AUTHOR_SLUGS = [
+  "layan-alharbi",
+  "razan-alkhatib",
+  "nour-alqasimi",
+  "salma-benamor",
+];
+
+const DEMO_CATEGORY_SLUGS = [
+  "makeup",
+  "perfumes",
+  "nails",
+  "beauty-tips",
+  "beauty-trends",
+];
+
+async function pruneDemoContent() {
+  const articles = await prisma.article.deleteMany({
+    where: { slug: { in: DEMO_ARTICLE_SLUGS } },
+  });
+
+  const authorsRemoved = await prisma.author.deleteMany({
+    where: { slug: { in: DEMO_AUTHOR_SLUGS }, articles: { none: {} } },
+  });
+
+  const categoriesRemoved = await prisma.category.deleteMany({
+    where: { slug: { in: DEMO_CATEGORY_SLUGS }, articles: { none: {} } },
+  });
+
+  // وسوم لم يبقَ لها مقال بعد الحذف تصير صفحات فارغة في الأرشيف.
+  const tagsRemoved = await prisma.tag.deleteMany({ where: { articles: { none: {} } } });
+
+  if (articles.count || authorsRemoved.count || categoriesRemoved.count || tagsRemoved.count) {
+    console.log(
+      `✓ إزالة المحتوى التجريبي: ${articles.count} مقالًا، ` +
+        `${authorsRemoved.count} كاتبات، ${categoriesRemoved.count} تصنيفات، ` +
+        `${tagsRemoved.count} وسمًا`,
+    );
+  }
+}
+
 async function main() {
   console.log("بدء تعبئة قاعدة بيانات «جمالِك»…\n");
 
@@ -242,6 +309,7 @@ async function main() {
   await seedAuthors();
   await seedTags();
   await seedArticles();
+  await pruneDemoContent();
 
   const counts = {
     مقالات: await prisma.article.count(),

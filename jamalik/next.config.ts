@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { bloggerRedirects } from "./src/config/blogger-redirects";
+
 /** ترويسات أمنية تُطبَّق على كل استجابة. */
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -34,6 +36,23 @@ const nextConfig: NextConfig = {
     deviceSizes: [360, 420, 640, 750, 828, 1080, 1200, 1920],
     imageSizes: [64, 80, 112, 128, 200, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30,
+  },
+
+  /**
+   * روابط مدونة Blogger المنقولة.
+   *
+   * الروابط القديمة (‏/2026/05/blog-post_870.html) مفهرسة في محركات البحث
+   * ومنشورة في أماكن لا نتحكّم بها. تحويل ٣٠١ دائم ينقل قيمتها إلى الرابط
+   * الجديد بدل أن تنتهي إلى صفحة ٤٠٤.
+   */
+  async redirects() {
+    // 301 صراحةً لا permanent: هذه الأخيرة تُخرج 308، وهي مكافئة لدى Google
+    // لكنّ أدوات السيو والزواحف القديمة تتعامل مع 301 بلا التباس.
+    return bloggerRedirects.map(({ from, to }) => ({
+      source: from,
+      destination: to,
+      statusCode: 301 as const,
+    }));
   },
 
   async headers() {

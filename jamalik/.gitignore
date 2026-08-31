@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# صور المقالات المنقولة: تُنزَّل وقت البناء عبر scripts/fetch-blogger-images.mjs.
+# لجعلها دائمة في المستودع، احذفي هذين السطرين وأضيفي الملفات إلى Git.
+/public/images/blog/
+scripts/blogger/raw.json
+scripts/blogger/out/
