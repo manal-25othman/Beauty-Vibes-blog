@@ -1,7 +1,7 @@
 /**
  * هل تحتاج قاعدة البيانات تعبئة أولى؟
  *
- * تُطبع `yes` في حالتين فقط: قاعدة فارغة تمامًا، أو قاعدة ما زالت تحمل المحتوى
+ * تُطبع `NEEDS_SEED=yes` في حالتين فقط: قاعدة فارغة تمامًا، أو قاعدة ما زالت تحمل المحتوى
  * التجريبي الذي رافق بناء المشروع قبل نقل مدونة العميلة. وما عدا ذلك `no`.
  *
  * الغاية: أن تكتمل هجرة المحتوى من نفسها في أول نشر، دون أن تتحوّل التعبئة إلى
@@ -28,20 +28,24 @@ async function main() {
 
   if (total === 0) {
     console.error("قاعدة فارغة — تعبئة أولى.");
-    return "yes";
+    return true;
   }
   if (demo > 0) {
     console.error("المحتوى التجريبي ما زال موجودًا — تشغيل هجرة المحتوى.");
-    return "yes";
+    return true;
   }
   console.error(`القاعدة تحمل ${total} مقالًا ولا أثر للمحتوى التجريبي.`);
-  return "no";
+  return false;
 }
 
+/**
+ * علامة مميّزة لا سطر مجرّد: قارئ النتيجة يبحث عنها في المخرجات، فلا يُربكه أي
+ * سطر يطبعه npx أو غيره. وغيابها يعني «لا تعبّئ» — وهو الجانب الآمن.
+ */
 main()
-  .then((answer) => process.stdout.write(answer))
+  .then((needed) => process.stdout.write(`NEEDS_SEED=${needed ? "yes" : "no"}\n`))
   .catch((error) => {
     console.error("تعذّر فحص القاعدة:", error instanceof Error ? error.message : error);
-    process.stdout.write("no");
+    process.stdout.write("NEEDS_SEED=no\n");
   })
   .finally(() => prisma.$disconnect());

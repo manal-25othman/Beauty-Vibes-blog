@@ -37,7 +37,9 @@ function shouldSeed() {
     return false;
   }
 
-  if (probe.stdout.trim() === "yes") {
+  // البحث عن العلامة لا مطابقة المخرجات كاملة: أي سطر إضافي يطبعه npx لا يُفسد
+  // القرار. وغياب العلامة (فشل، أو مخرجات غير متوقّعة) يعني «لا تعبّئ».
+  if (/NEEDS_SEED=yes/.test(probe.stdout)) {
     console.log("▶ القاعدة تحتاج تعبئة أولى — تشغيلها الآن.");
     return true;
   }
