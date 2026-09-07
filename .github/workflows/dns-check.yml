@@ -1,0 +1,50 @@
+# فحص تشخيصي مؤقّت لإعداد النطاق. يُحذف بعد استخدامه.
+name: dns-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "النطاق المراد فحصه"
+        required: true
+        default: "beautyvibes.net"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: قياس الـ DNS
+        run: |
+          D="${{ inputs.domain }}"
+
+          echo "=== خوادم الأسماء عند سجلّ النطاق (.net) ==="
+          dig +short NS "$D" @a.gtld-servers.net || true
+          dig NS "$D" @a.gtld-servers.net +noall +authority || true
+
+          echo
+          echo "=== خوادم الأسماء كما تراها المحلّلات العامة ==="
+          dig +short NS "$D" @8.8.8.8 || true
+          dig +short NS "$D" @1.1.1.1 || true
+
+          echo
+          echo "=== سجلّ A ==="
+          dig +short A "$D" @8.8.8.8 || true
+          echo "--- www ---"
+          dig +short A "www.$D" @8.8.8.8 || true
+          dig +short CNAME "www.$D" @8.8.8.8 || true
+
+          echo
+          echo "=== SOA ==="
+          dig +short SOA "$D" @8.8.8.8 || true
+
+          echo
+          echo "=== حالة النطاق عند السجلّ (whois) ==="
+          whois "$D" 2>/dev/null | grep -iE "domain status|name server|registrar:|expiry|expiration" || true
+
+      - name: طلب HTTP فعلي
+        run: |
+          D="${{ inputs.domain }}"
+          for u in "https://$D/" "https://www.$D/"; do
+            echo "=== $u ==="
+            curl -s -o /dev/null -m 25 -w "code=%{http_code} ip=%{remote_ip} redirect=%{redirect_url}\n" "$u" || echo "فشل الاتصال"
+          done
