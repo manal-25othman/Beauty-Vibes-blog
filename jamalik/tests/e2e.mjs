@@ -29,7 +29,6 @@ const VIEWPORTS = [320, 375, 390, 430, 768, 1024, 1440];
 const STATIC_PAGES = [
   "/",
   "/articles",
-  "/categories",
   "/search?q=%D8%A7%D9%84%D8%B4%D8%B9%D8%B1",
   "/about",
   "/contact",
@@ -89,7 +88,30 @@ const AUTHOR_PATH = await (async () => {
   return href ?? "/articles";
 })();
 
-const PAGES = [...STATIC_PAGES, ARTICLE_PATH, AUTHOR_PATH];
+const CATEGORY_PATH = await (async () => {
+  const { context, page } = await newPage(1280);
+  const href = await firstHref(page, "/", "/category/");
+  await context.close();
+  if (!href) throw new Error("لم يُعثر على رابط تصنيف على الصفحة الرئيسة.");
+  return href;
+})();
+
+const PAGES = [...STATIC_PAGES, ARTICLE_PATH, AUTHOR_PATH, CATEGORY_PATH];
+
+// كل مسار يجيب 200 قبل قياس أي شيء عليه. بدون هذا الفحص تمرّ صفحة 404 من
+// فحوص التخطيط كلها بنجاح — فهي صفحة سليمة البناء — ويبقى المسار المكسور خفيًا.
+{
+  const { context, page } = await newPage(1280);
+  const broken = [];
+
+  for (const path of PAGES) {
+    const response = await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+    if (response?.status() !== 200) broken.push(`${path} (${response?.status() ?? "لا استجابة"})`);
+  }
+
+  check("كل المسارات المفحوصة تجيب 200", broken.length === 0, broken.join(", "));
+  await context.close();
+}
 
 // ---------------------------------------------------------------- 1. التجاوب
 for (const width of VIEWPORTS) {
@@ -273,6 +295,34 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     "بريد مكرّر يُرفض",
     (await page.locator("body").innerText()).includes("مسجّل بالفعل"),
   );
+
+  // إعادة تعيين كلمة مرور حساب آخر — لمن نسيت كلمتها ولا سبيل لاستعادتها.
+  await page.goto(`${BASE}/admin/users`, { waitUntil: "domcontentloaded" });
+  const editorRow = page.locator("table tbody tr", { hasText: newEmail });
+  const resetPassword = "ResetByAdmin123x";
+  await editorRow.locator('input[name="password"]').fill(resetPassword);
+  await editorRow.getByRole("button", { name: "تعيين" }).click();
+  await page.waitForURL("**/admin/users?reset=*", { timeout: 15000 });
+  check(
+    "إعادة تعيين كلمة المرور تُبلِغ بالنجاح",
+    (await page.locator("body").innerText()).includes("تم تعيين كلمة مرور جديدة"),
+  );
+
+  // الاختبار الحقيقي: هل تدخل صاحبة الحساب بالكلمة الجديدة؟ في سياق مستقلّ
+  // حتى لا تتأثّر جلسة المديرة التي تكمل بقية الاختبارات.
+  const editorContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const editorPage = await editorContext.newPage();
+  await editorPage.goto(`${BASE}/admin/login`, { waitUntil: "domcontentloaded" });
+  await editorPage.locator("#login-email").fill(newEmail);
+  await editorPage.locator("#login-password").fill(resetPassword);
+  await editorPage.getByRole("button", { name: "تسجيل الدخول" }).click();
+  await editorPage.waitForURL("**/admin", { timeout: 15000 }).catch(() => {});
+  check(
+    "المحرّرة تدخل بالكلمة الجديدة",
+    editorPage.url().endsWith("/admin"),
+    editorPage.url(),
+  );
+  await editorContext.close();
 
   // إنشاء مقال جديد
   const slug = `test-article-${Date.now()}`;

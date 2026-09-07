@@ -1,4 +1,4 @@
-import { changeUserRole, toggleUserActive } from "@/app/actions/admin-users";
+import { changeUserRole, resetUserPassword, toggleUserActive } from "@/app/actions/admin-users";
 import { NewUserForm } from "@/components/admin/new-user-form";
 import { requireAdmin } from "@/lib/auth/guard";
 import { formatDateTime } from "@/lib/format";
@@ -6,7 +6,12 @@ import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "الحسابات" };
 
-export default async function AdminUsersPage() {
+type PageProps = {
+  searchParams: Promise<{ reset?: string; error?: string }>;
+};
+
+export default async function AdminUsersPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const admin = await requireAdmin();
 
   const users = await prisma.user.findMany({
@@ -31,8 +36,29 @@ export default async function AdminUsersPage() {
         </p>
       </header>
 
+      {params.reset && (
+        <p role="status" className="rounded-xl bg-success-soft px-4 py-3 text-sm text-success">
+          تم تعيين كلمة مرور جديدة لحساب {params.reset}. سلّميها لها، وأُنهيت جلساتها المفتوحة.
+        </p>
+      )}
+      {params.error === "weak" && (
+        <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          كلمة المرور يجب ألا تقل عن ١٢ حرفًا وتحتوي حرفًا كبيرًا وصغيرًا ورقمًا.
+        </p>
+      )}
+      {params.error === "self" && (
+        <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          كلمة مرورك تُغيَّر من صفحة «حسابي» بعد إدخال كلمتك الحالية.
+        </p>
+      )}
+      {params.error === "missing" && (
+        <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          لم يعد هذا الحساب موجودًا.
+        </p>
+      )}
+
       <section className="overflow-x-auto rounded-2xl border border-line bg-surface">
-        <table className="w-full min-w-[44rem] text-sm">
+        <table className="w-full min-w-[52rem] text-sm">
           <thead className="border-b border-line text-ink-muted">
             <tr>
               <th className="px-4 py-3 text-start font-medium">الحساب</th>
@@ -40,6 +66,7 @@ export default async function AdminUsersPage() {
               <th className="px-4 py-3 text-start font-medium">مقالات</th>
               <th className="px-4 py-3 text-start font-medium">آخر دخول</th>
               <th className="px-4 py-3 text-start font-medium">الحالة</th>
+              <th className="px-4 py-3 text-start font-medium">كلمة المرور</th>
             </tr>
           </thead>
           <tbody>
@@ -106,6 +133,34 @@ export default async function AdminUsersPage() {
                           }`}
                         >
                           {user.isActive ? "تعطيل" : "تفعيل"}
+                        </button>
+                      </form>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {isSelf ? (
+                      // كلمة المديرة تُغيَّر من «حسابي» حيث تُطلب كلمتها الحالية.
+                      <span className="text-ink-muted">—</span>
+                    ) : (
+                      <form action={resetUserPassword} className="flex items-center gap-2">
+                        <input type="hidden" name="id" value={user.id} />
+                        <input
+                          type="text"
+                          name="password"
+                          required
+                          minLength={12}
+                          dir="ltr"
+                          autoComplete="off"
+                          placeholder="كلمة مرور جديدة"
+                          aria-label={`كلمة مرور جديدة لحساب ${user.name}`}
+                          className="w-40 rounded-lg border border-line bg-surface px-2 py-1 text-sm"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+                        >
+                          تعيين
                         </button>
                       </form>
                     )}
