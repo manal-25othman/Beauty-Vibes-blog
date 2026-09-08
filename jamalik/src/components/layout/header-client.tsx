@@ -84,8 +84,8 @@ export function HeaderClient({ siteName, navigation, categories }: Props) {
             <Image
               src="/brand/logo.svg"
               alt={siteName}
-              width={1077}
-              height={275}
+              width={854}
+              height={200}
               // SVG لا يمرّ بمحسّن الصور بفائدة، فيُخدَم كما هو بلا طلب إضافي.
               unoptimized
               // الشعار أول ما يُرسم، فلا يُؤجَّل تحميله.
