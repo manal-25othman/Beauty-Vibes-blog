@@ -1,0 +1,58 @@
+# فحص تشخيصي مؤقّت لإعداد النطاق. يُحذف بعد استخدامه.
+name: dns-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "النطاق المراد فحصه"
+        required: true
+        default: "beautyvibes.net"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: التفويض عند سجلّ النطاق
+        run: |
+          D="${{ inputs.domain }}"
+          echo "خوادم الأسماء المسجّلة عند .net:"
+          dig +short NS "$D" @a.gtld-servers.net || true
+
+      - name: هل تجيب خوادم الأسماء الحالية؟
+        run: |
+          D="${{ inputs.domain }}"
+          NS=$(dig +short NS "$D" @a.gtld-servers.net | head -5)
+          for ns in $NS; do
+            echo "=== $ns ==="
+            dig SOA "$D" @"$ns" +noall +comment +answer 2>&1 | grep -E "HEADER|SOA" || true
+            echo "-- A --"
+            dig A "$D" @"$ns" +noall +answer 2>&1 || true
+            echo "-- www --"
+            dig ANY "www.$D" @"$ns" +noall +answer 2>&1 || true
+            echo
+          done
+
+      - name: ما تراه المحلّلات العامة
+        run: |
+          D="${{ inputs.domain }}"
+          for r in 8.8.8.8 1.1.1.1 9.9.9.9; do
+            echo "=== $r ==="
+            echo -n "A     $D : "; dig +short A "$D" @$r | tr '\n' ' '; echo
+            echo -n "A www.$D : "; dig +short A "www.$D" @$r | tr '\n' ' '; echo
+            echo -n "CNAME www : "; dig +short CNAME "www.$D" @$r | tr '\n' ' '; echo
+          done
+
+      - name: طلب HTTP فعلي
+        run: |
+          D="${{ inputs.domain }}"
+          for u in "https://$D/" "https://www.$D/" "http://$D/"; do
+            echo -n "$u -> "
+            curl -s -o /dev/null -m 25 -w "code=%{http_code} ip=%{remote_ip} redirect=%{redirect_url}\n" "$u" || echo "فشل الاتصال"
+          done
+
+      - name: حالة النطاق عند السجلّ
+        run: |
+          D="${{ inputs.domain }}"
+          sudo apt-get install -y whois >/dev/null 2>&1 || true
+          whois "$D" | grep -iE "domain status|name server|registrar:|expiry" || echo "whois غير متاح"
