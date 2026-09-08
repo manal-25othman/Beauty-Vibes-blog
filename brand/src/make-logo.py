@@ -95,7 +95,26 @@ def monogram(size, cx_center, baseline, ink):
 
 # ----------------------------------------------------------------- المخرجات
 def horizontal(ink, name):
-    """الترويسة: الاسم وحده — عند ٣٦ بكسل لا مكان للحرفين فوقه."""
+    """
+    الترويسة: الحرفان ثم الاسم على سطر واحد.
+
+    التركيب المكدّس لا يصلح هنا — ارتفاع الترويسة ٣٦ بكسل، فيصير كل جزء
+    أصغر من أن يُقرأ. أمّا جنبًا إلى جنب فيأخذ العرض المتاح ويبقى الجزءان
+    بحجمهما. الحرفان أكبر من الاسم لأنهما العلامة، والاسم يشرحها.
+    """
+    H, PAD = 200.0, 14.0
+    MS, WS, BASE = 148.0, 92.0, 138.0
+    GAP = 30.0
+
+    mono_w = group("BV", MS, 0, 0, ink, tracking=TRACK)[1]
+    m, _ = monogram(MS, PAD + mono_w / 2, BASE, ink)
+    x = PAD + mono_w + GAP
+    w, ww = wordmark(WS, x, BASE, ink)
+    open(name, "w").write(svg(round(x + ww + PAD, 1), H, m + w))
+
+
+def wordmark_only(ink, name):
+    """الاسم وحده — للمساحات الضيقة جدًّا حيث لا يسع الحرفان."""
     H, S, PAD, BASE = 200.0, 132.0, 14.0, 148.0
     body, w = wordmark(S, PAD, BASE, ink)
     open(name, "w").write(svg(round(w + 2 * PAD, 1), H, body))
@@ -120,6 +139,8 @@ if __name__ == "__main__":
     out = sys.argv[1].rstrip("/")
     horizontal(INK, f"{out}/logo.svg")
     horizontal(CREAM, f"{out}/logo-inverse.svg")
+    wordmark_only(INK, f"{out}/wordmark.svg")
+    wordmark_only(CREAM, f"{out}/wordmark-inverse.svg")
     stacked(INK, f"{out}/logo-full.svg")
     mark(INK, f"{out}/mark.svg")
     mark(CREAM, f"{out}/badge.svg", bg=INK)
