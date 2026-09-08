@@ -16,43 +16,28 @@ jobs:
       - name: التفويض عند سجلّ النطاق
         run: |
           D="${{ inputs.domain }}"
-          echo "خوادم الأسماء المسجّلة عند .net:"
-          dig +short NS "$D" @a.gtld-servers.net || true
+          echo "خوادم الأسماء المسجّلة عند .net (مع مدّة الصلاحية):"
+          dig NS "$D" @a.gtld-servers.net +noall +authority || true
 
-      - name: هل تجيب خوادم الأسماء الحالية؟
+      - name: انتشار الاسم عبر محلّلات متنوّعة
         run: |
           D="${{ inputs.domain }}"
-          NS=$(dig +short NS "$D" @a.gtld-servers.net | head -5)
-          for ns in $NS; do
-            echo "=== $ns ==="
-            dig SOA "$D" @"$ns" +noall +comment +answer 2>&1 | grep -E "HEADER|SOA" || true
-            echo "-- A --"
-            dig A "$D" @"$ns" +noall +answer 2>&1 || true
-            echo "-- www --"
-            dig ANY "www.$D" @"$ns" +noall +answer 2>&1 || true
-            echo
-          done
-
-      - name: ما تراه المحلّلات العامة
-        run: |
-          D="${{ inputs.domain }}"
-          for r in 8.8.8.8 1.1.1.1 9.9.9.9; do
-            echo "=== $r ==="
-            echo -n "A     $D : "; dig +short A "$D" @$r | tr '\n' ' '; echo
-            echo -n "A www.$D : "; dig +short A "www.$D" @$r | tr '\n' ' '; echo
-            echo -n "CNAME www : "; dig +short CNAME "www.$D" @$r | tr '\n' ' '; echo
+          # محلّلات من مشغّلين مختلفين وقارّات مختلفة، لقياس مدى الانتشار.
+          for entry in "8.8.8.8:Google" "1.1.1.1:Cloudflare" "9.9.9.9:Quad9" \
+                       "208.67.222.222:OpenDNS" "94.140.14.14:AdGuard" \
+                       "77.88.8.8:Yandex" "64.6.64.6:Verisign" "156.154.70.1:Neustar"; do
+            ip="${entry%%:*}"; name="${entry##*:}"
+            a=$(dig +short +time=3 +tries=1 A "$D" @"$ip" 2>/dev/null | tr '\n' ' ')
+            printf "%-16s %-12s → %s\n" "$name" "$ip" "${a:-(لا شيء)}"
           done
 
       - name: طلب HTTP فعلي
         run: |
           D="${{ inputs.domain }}"
-          for u in "https://$D/" "https://www.$D/" "http://$D/"; do
+          for u in "https://$D/" "https://www.$D/"; do
             echo -n "$u -> "
-            curl -s -o /dev/null -m 25 -w "code=%{http_code} ip=%{remote_ip} redirect=%{redirect_url}\n" "$u" || echo "فشل الاتصال"
+            curl -s -o /dev/null -m 25 -w "code=%{http_code} ip=%{remote_ip}\n" "$u" || echo "فشل الاتصال"
           done
-
-      - name: حالة النطاق عند السجلّ
-        run: |
-          D="${{ inputs.domain }}"
-          sudo apt-get install -y whois >/dev/null 2>&1 || true
-          whois "$D" | grep -iE "domain status|name server|registrar:|expiry" || echo "whois غير متاح"
+          echo
+          echo "=== عيّنة من محتوى الصفحة ==="
+          curl -s -m 25 "https://$D/" | grep -oE "<title>[^<]*</title>" || echo "تعذّر جلب المحتوى"
