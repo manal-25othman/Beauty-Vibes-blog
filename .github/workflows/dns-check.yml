@@ -8,63 +8,62 @@ on:
         required: true
         default: "beautyvibes.net"
       country:
-        description: "رمز الدولة لقائمة المحلّلات المحلّية"
         required: true
         default: "sa"
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: هل هناك خلل DNSSEC؟
         run: |
           D="${{ inputs.domain }}"
-          echo "=== سجلّات DS عند سجلّ .net (توقيع النطاق) ==="
-          # وجود DS بلا مفاتيح مطابقة عند الخوادم الجديدة = Server failed عند كل
-          # محلّل يتحقّق. غيابه ينفي هذا السبب نفيًا قاطعًا.
-          dig DS "$D" @a.gtld-servers.net +noall +answer +authority | grep -E "DS|NSEC3" | head -5
+          echo "=== توقيع النطاق (DS) عند سجلّ .net ==="
+          # DS موجود بلا مفاتيح مطابقة عند الخوادم الجديدة = SERVFAIL عند كل
+          # محلّل يتحقّق من التواقيع. وغيابه ينفي هذا السبب نفيًا قاطعًا.
+          dig DS "$D" @a.gtld-servers.net +noall +answer +authority \
+            | grep -E "IN\s+(DS|NSEC3)" | head -4
           echo
-          echo "-- هل يعلن المحلّل المتحقّق النتيجة موثّقة (ad flag)؟ --"
-          dig "$D" A @8.8.8.8 +dnssec +noall +comment | grep -E "flags|status"
+          echo "-- رايات جواب محلّل متحقّق (ad = موثّق) --"
+          dig "$D" A @8.8.8.8 +dnssec +noall +comment | grep -E "flags:|status:"
           echo
-          echo "-- استعلام يتجاوز التحقّق كلّيًا (+cd) --"
+          echo "-- الجواب مع تعطيل التحقّق (+cd): --"
           dig "$D" A @8.8.8.8 +cd +short
 
-      - name: خوادم النطاق تجيب مباشرة؟
+      - name: خوادم النطاق نفسها
         run: |
           D="${{ inputs.domain }}"
           for ns in dns1.registrar-servers.com dns2.registrar-servers.com; do
-            echo -n "$ns → "
-            dig "$D" A @"$ns" +short +time=3 | tr '\n' ' '
-            echo
+            printf "%-32s → %s\n" "$ns" "$(dig "$D" A @"$ns" +short +time=3 +tries=1 | tr '\n' ' ')"
           done
 
       - name: المحلّلات داخل الدولة
         run: |
           D="${{ inputs.domain }}"
-          C="${{ inputs.country }}"
-          curl -s -m 40 "https://public-dns.info/nameserver/$C.txt" -o list.txt || true
-          if [ ! -s list.txt ]; then echo "تعذّر جلب القائمة"; exit 0; fi
-          # عناوين IPv4 فقط، وأول ٤٥ منها تكفي لعيّنة دالّة.
-          grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' list.txt | head -45 > ips.txt
-          echo "عدد المحلّلات المفحوصة: $(wc -l < ips.txt)"
+          curl -s -m 30 "https://public-dns.info/nameserver/${{ inputs.country }}.txt" -o list.txt || true
+          [ -s list.txt ] || { echo "تعذّر جلب القائمة"; exit 0; }
+          grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' list.txt | head -60 > ips.txt
+          echo "المفحوصة: $(wc -l < ips.txt) محلّلًا داخل ${{ inputs.country }}"
           echo
 
-          ok=0; bad=0; dead=0
-          while read -r ip; do
-            # ضابط: محلّل لا يجيب عن example.com أصلًا فهو معطّل، لا دليل فيه.
-            ctrl=$(dig +short +time=2 +tries=1 A example.com @"$ip" 2>/dev/null | head -1)
-            if [ -z "$ctrl" ]; then dead=$((dead+1)); continue; fi
-            a=$(dig +short +time=2 +tries=1 A "$D" @"$ip" 2>/dev/null | head -1)
-            if [ "$a" = "216.198.79.1" ]; then
-              ok=$((ok+1)); printf "  ✓ %-16s\n" "$ip"
-            else
-              bad=$((bad+1)); printf "  ✗ %-16s → %s\n" "$ip" "${a:-(فشل)}"
-            fi
-          done < ips.txt
+          cat > probe.sh <<'SH'
+          #!/bin/bash
+          ip="$1"; D="$2"
+          # ضابط: محلّل لا يجيب عن example.com معطّل، فلا دليل فيه.
+          ctrl=$(timeout 4 dig +short +time=2 +tries=1 A example.com @"$ip" 2>/dev/null | head -1)
+          [ -z "$ctrl" ] && { echo "DEAD $ip"; exit 0; }
+          a=$(timeout 4 dig +short +time=2 +tries=1 A "$D" @"$ip" 2>/dev/null | head -1)
+          if [ "$a" = "216.198.79.1" ]; then echo "OK   $ip"; else echo "FAIL $ip ${a:-(لا جواب)}"; fi
+          SH
+          chmod +x probe.sh
 
+          xargs -a ips.txt -P 20 -I{} ./probe.sh {} "$D" > res.txt 2>/dev/null || true
+
+          grep '^OK'   res.txt | head -20
+          grep '^FAIL' res.txt | head -20
           echo
-          echo "================ الحصيلة ================"
-          echo "  يفتح النطاق صحيحًا : $ok"
-          echo "  يفشل               : $bad"
-          echo "  محلّل معطّل (مستبعد) : $dead"
+          echo "============ الحصيلة ============"
+          printf "  صحيح  : %s\n" "$(grep -c '^OK'   res.txt)"
+          printf "  فاشل  : %s\n" "$(grep -c '^FAIL' res.txt)"
+          printf "  معطّل  : %s  (مستبعد)\n" "$(grep -c '^DEAD' res.txt)"
