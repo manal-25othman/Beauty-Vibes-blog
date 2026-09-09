@@ -1,0 +1,37 @@
+# فحص تشخيصي مؤقّت لإعداد النطاق. يُحذف بعد استخدامه.
+name: dns-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        required: true
+        default: "beautyvibes.net"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: الحالة الآن
+        run: |
+          D="${{ inputs.domain }}"
+          echo "=== التفويض عند سجلّ .net ==="
+          dig NS "$D" @a.gtld-servers.net +noall +authority || true
+
+          echo
+          echo "=== الانتشار ==="
+          for e in "8.8.8.8:Google" "1.1.1.1:Cloudflare" "9.9.9.9:Quad9" \
+                   "208.67.222.222:OpenDNS" "94.140.14.14:AdGuard" "77.88.8.8:Yandex" \
+                   "64.6.64.6:Verisign" "156.154.70.1:Neustar" "8.26.56.26:Comodo" \
+                   "4.2.2.1:Level3"; do
+            ip="${e%%:*}"; n="${e##*:}"
+            a=$(dig +short +time=3 +tries=1 A "$D" @"$ip" 2>/dev/null | tr '\n' ' ')
+            printf "%-12s %-16s → %s\n" "$n" "$ip" "${a:-(لا شيء)}"
+          done
+
+          echo
+          echo "=== الموقع ==="
+          curl -s -o /dev/null -m 25 -w "https://$D/ → %{http_code}  ip=%{remote_ip}\n" "https://$D/"
+          curl -s -m 25 "https://$D/" | grep -oE "<title>[^<]*</title>"
+          echo "--- الشعار الجديد ---"
+          curl -s -o /dev/null -m 25 -w "logo.svg → %{http_code} size=%{size_download}\n" "https://$D/brand/logo.svg"
