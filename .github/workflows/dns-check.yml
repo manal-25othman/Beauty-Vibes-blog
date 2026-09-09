@@ -51,14 +51,14 @@ jobs:
           #!/bin/bash
           ip="$1"; D="$2"
           # ضابط: محلّل لا يجيب عن example.com معطّل، فلا دليل فيه.
-          ctrl=$(timeout 4 dig +short +time=2 +tries=1 A example.com @"$ip" 2>/dev/null | head -1)
+          ctrl=$(timeout 9 dig +short +time=4 +tries=2 A example.com @"$ip" 2>/dev/null | head -1)
           [ -z "$ctrl" ] && { echo "DEAD $ip"; exit 0; }
-          a=$(timeout 4 dig +short +time=2 +tries=1 A "$D" @"$ip" 2>/dev/null | head -1)
+          a=$(timeout 9 dig +short +time=4 +tries=2 A "$D" @"$ip" 2>/dev/null | head -1)
           if [ "$a" = "216.198.79.1" ]; then echo "OK   $ip"; else echo "FAIL $ip ${a:-(لا جواب)}"; fi
           SH
           chmod +x probe.sh
 
-          xargs -a ips.txt -P 20 -I{} ./probe.sh {} "$D" > res.txt 2>/dev/null || true
+          xargs -a ips.txt -P 12 -I{} ./probe.sh {} "$D" > res.txt 2>/dev/null || true
 
           grep '^OK'   res.txt | head -20
           grep '^FAIL' res.txt | head -20
