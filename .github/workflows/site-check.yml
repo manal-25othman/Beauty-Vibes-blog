@@ -1,0 +1,35 @@
+# فحص تشخيصي مؤقّت. يُحذف بعد استخدامه.
+name: site-check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: هل التحليلات ووسم التحقّق مركّبان؟
+        run: |
+          D="https://beautyvibes.net"
+          HTML=$(curl -s -m 25 "$D/")
+
+          echo "=== Google Analytics ==="
+          if echo "$HTML" | grep -q "googletagmanager.com/gtag/js"; then
+            echo "  ✓ سكربت GA4 محمّل"
+            echo "$HTML" | grep -oE "G-[A-Z0-9]{6,}" | sort -u | head -3
+          else
+            echo "  ✗ لا سكربت تحليلات — الحقل فارغ في الإعدادات"
+          fi
+
+          echo
+          echo "=== وسم تحقّق Search Console ==="
+          if echo "$HTML" | grep -q "google-site-verification"; then
+            echo "$HTML" | grep -oE '<meta name="google-site-verification"[^>]*>' | head -1
+          else
+            echo "  ✗ لا وسم تحقّق — الحقل فارغ في الإعدادات"
+          fi
+
+          echo
+          echo "=== الموقع ==="
+          curl -s -o /dev/null -m 25 -w "  الرئيسة → %{http_code}\n" "$D/"
+          curl -s -o /dev/null -m 25 -w "  خريطة الموقع → %{http_code}\n" "$D/sitemap.xml"
