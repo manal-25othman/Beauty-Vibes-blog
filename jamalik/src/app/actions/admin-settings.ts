@@ -53,6 +53,8 @@ export async function saveSettings(
 
   // الإعدادات تظهر في التذييل والترويسة وسكربتات الرأس على كل الصفحات.
   revalidatePath("/", "layout");
+  // ads.txt معالج مسار لا صفحة، فلا يطاله إبطال التخطيط.
+  revalidatePath("/ads.txt");
 
   return formSuccess("تم حفظ الإعدادات وتطبيقها على الموقع.");
 }

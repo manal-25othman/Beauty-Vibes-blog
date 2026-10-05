@@ -48,6 +48,11 @@ export async function generateMetadata(): Promise<Metadata> {
     ...(settings.googleSiteVerification
       ? { verification: { google: settings.googleSiteVerification } }
       : {}),
+    // وسم ملكية AdSense — إحدى ثلاث طرق تقبلها Google لإثبات الموقع، وأخفّها:
+    // لا يحمّل سكربتًا ولا يتطلّب تفعيل الإعلانات، فيصلح للتحقّق قبل القبول.
+    ...(/^ca-pub-\d{10,20}$/.test(settings.adsensePublisherId)
+      ? { other: { "google-adsense-account": settings.adsensePublisherId } }
+      : {}),
     alternates: {
       canonical: getSiteUrl(),
       types: {
